@@ -25,84 +25,6 @@ inline bool isprime(const uint32_t n)
 	return true;
 }
 
-inline uint32_t mulmod(const uint32_t x, const uint32_t y, const uint32_t m)
-{
-	return uint32_t((x * uint64_t(y)) % m);
-}
-
-inline uint32_t powmod(const uint32_t x, const uint32_t n, const uint32_t m)
-{
-	if (n == 0) return 1;
-
-	uint32_t r = 1, y = x;
-	for (uint32_t i = n; i != 1; i /= 2)
-	{
-		if (i % 2 != 0) r = mulmod(r, y, m);
-		y = mulmod(y, y, m);
-	}
-	return mulmod(r, y, m);
-}
-
-class Number
-{
-private:
-	std::vector<uint32_t> _prime;
-
-public:
-	Number()
-	{
-		_prime.push_back(2);
-		for (uint32_t p = 3; p < 65536; p += 2) if (isprime(p)) _prime.push_back(p);
-	}
-
-public:
-	void factor(const uint32_t n, std::vector<std::pair<uint32_t, uint32_t> > & fac) const
-	{
-		uint32_t m = n;
-		for (const uint32_t & p : _prime)
-		{
-			if (m % p == 0)
-			{
-				uint32_t e = 0;
-				do
-				{
-					m /= p;
-					++e;	
-				}
-				while (m % p == 0);
-
-				fac.push_back(std::make_pair(p, e));
-				if (m == 1) return;
-			}
-		}
-		if (m != 1) fac.push_back(std::make_pair(m, 1));
-	}
-
-public:
-	uint32_t order2(const uint32_t p) const
-	{
-		uint32_t e = p - 1;
-
-		std::vector<std::pair<uint32_t, uint32_t>> fac;
-		factor(e, fac);
-
-		for (const auto & f : fac)
-		{
-			const uint32_t p_i = f.first, v_i = f.second;
-			for (uint32_t i = 0; i < v_i; ++i) e /= p_i;
-
-			uint32_t g1 = powmod(2, e, p);
-			while (g1 != 1)
-			{
-				g1 = powmod(g1, p_i, p);
-				e *= p_i;
-			}
-		}
-
-		return e;
-	}
-};
-
 class Weight
 {
 private:
@@ -120,22 +42,29 @@ private:
 public:
 	Weight(const uint32_t p_max, const uint32_t n_max) : s_max(n_max), C0(exp(0.577215664) * log(p_max) / double(n_max))
 	{
-		Number number;
+		// Number number;
 		for (uint32_t p = 3; p <= p_max; p += 2)
 		{
 			if (!isprime(p)) continue;
-			const uint32_t o = number.order2(p);
-			Pos pos; pos.p = p; pos.o = o; pos.s = new uint32_t[p];
-			pos.s[0] = uint32_t(-1);
-			for (uint32_t k = 1; k < p; ++k)
+			// std::cout << p << std::endl;
+
+			Pos pos; pos.p = p; pos.s = new uint32_t[p];
+			for (size_t k = 0; k < p; ++k) pos.s[k] = uint32_t(-1);
+
+			uint32_t k = p - 1;		// (p - 1) * 2^0 + 1 = 0 (mod p)
+			for (uint32_t n = 0; n < p; ++n)
 			{
-				uint32_t k2pnmodp = k;
-				pos.s[k] = uint32_t(-1);
-				for (uint32_t n = 0; n < o; ++n)
+				pos.s[k] = n;
+				// std::cout << "  " << k << ", " << n << std::endl;
+
+				// if k * 2^n + 1 = 0 (mod p) then k/2 * 2^{n + 1} + 1 = 0 (mod p)
+				if (k % 2 == 0) k /= 2; else k = (k + p) / 2;
+				if (k == p - 1)
 				{
-					if (k2pnmodp == p - 1) { if (pos.s[k] == uint32_t(-1)) pos.s[k] = n; else std::cout << "ERROR" << std::endl; }
-					k2pnmodp *= 2;
-					k2pnmodp -= (k2pnmodp >= p) ? p : 0;
+					// n + 1 is the order of 2 modulo p
+					pos.o = n + 1;
+					// std::cout << "  order = " << n + 1 << std::endl;
+					break;
 				}
 			}
 			pos_vect.push_back(pos);
@@ -148,8 +77,7 @@ public:
 		for (const auto & po : pos_vect)
 		{
 			const uint32_t p = po.p, o = po.o;
-			const uint32_t kmodp = k % p;
-			const uint32_t n = po.s[kmodp];
+			const uint32_t n = po.s[k % p];
 			if (n == uint32_t(-1)) continue;
 			for (size_t i = n; i < s_max; i += o) sieve[i] = false;
 		}
@@ -167,17 +95,18 @@ int main(int argc, char * argv[])
 	{
 		std::cout << "Usage: weight k_min k_max [p_max] [s_max]" << std::endl;
 		std::cout << "         Compute the weights for odd k_min <= k <= k_max." << std::endl;
-		std::cout << "         Estimates are computed with p <= p_max (default 10000)" << std::endl;
-		std::cout << "         and with n <= n_max is the max value (default 100000)." << std::endl;
+		std::cout << "         Estimates are computed with p <= p_max (default 20000)" << std::endl;
+		std::cout << "         and with n <= n_max is the max value (default 50000)." << std::endl;
 		return EXIT_FAILURE;
 	}
 
-	uint32_t k_min = uint32_t(std::atoll(argv[1])), k_max = uint32_t(std::atoll(argv[2]));
+	uint32_t k_min = (argc > 1) ? uint32_t(std::atoll(argv[1])) : 3;
+	uint32_t k_max = (argc > 2) ? uint32_t(std::atoll(argv[2])) : 1000000;
 	if (k_min < 3) k_min = 3;
 	if (k_min % 2 == 0) k_min += 1;
 	if (k_max % 2 == 0) k_max -= 1;
-	const uint32_t p_max = (argc > 3) ? uint32_t(std::atoll(argv[3])) : 10000;
-	const uint32_t n_max = (argc > 4) ? uint32_t(std::atoll(argv[4])) : 100000;
+	const uint32_t p_max = (argc > 3) ? uint32_t(std::atoll(argv[3])) : 20000;
+	const uint32_t n_max = (argc > 4) ? uint32_t(std::atoll(argv[4])) : 50000;
 
 	std::cout << "Initializing prime list..." << std::endl;
 	Weight weight(p_max, n_max);
