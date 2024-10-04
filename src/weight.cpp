@@ -16,50 +16,44 @@ See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 #include <iomanip>
 #include <fstream>
 
-inline bool isprime(const uint32_t n)
-{
-	if (n % 2 == 0) return (n == 2);
-	if (n < 9) return true;
-	const uint32_t s = uint32_t(sqrt(double(n))) + 1;
-	for (uint32_t d = 3; d <= s; d += 2) if (n % d == 0) return false;
-	return true;
-}
+#include <primesieve.hpp>
 
 class Weight
 {
 private:
 	struct Pos
 	{
-		uint32_t p;
-		uint32_t o;
-		uint32_t * s;
+		uint64_t p;
+		uint64_t o;
+		uint64_t * s;
 	};
 
-	const uint32_t s_max;
+	const uint64_t s_max;
 	const double C0;
 	std::vector<Pos> pos_vect;
 
 public:
-	Weight(const uint32_t p_max, const uint32_t n_max) : s_max(n_max), C0(exp(0.577215664) * log(p_max) / double(n_max))
+	Weight(const uint64_t p_max, const uint64_t n_max) : s_max(n_max), C0(exp(0.577215664) * log(p_max) / double(n_max))
 	{
-		// Number number;
-		for (uint32_t p = 3; p <= p_max; p += 2)
+
+		primesieve::iterator it(3, p_max);
+		uint64_t prime = it.next_prime();
+		for (; prime < p_max; prime = it.next_prime())
 		{
-			if (!isprime(p)) continue;
-			// std::cout << p << std::endl;
+			// std::cout << prime << std::endl;
 
-			Pos pos; pos.p = p; pos.s = new uint32_t[p];
-			for (size_t k = 0; k < p; ++k) pos.s[k] = uint32_t(-1);
+			Pos pos; pos.p = prime; pos.s = new uint64_t[prime];
+			for (size_t k = 0; k < prime; ++k) pos.s[k] = uint64_t(-1);
 
-			uint32_t k = p - 1;		// (p - 1) * 2^0 + 1 = 0 (mod p)
-			for (uint32_t n = 0; n < p; ++n)
+			uint64_t k = prime - 1;		// (p - 1) * 2^0 + 1 = 0 (mod p)
+			for (uint64_t n = 0; n < prime; ++n)
 			{
 				pos.s[k] = n;
 				// std::cout << "  " << k << ", " << n << std::endl;
 
 				// if k * 2^n + 1 = 0 (mod p) then k/2 * 2^{n + 1} + 1 = 0 (mod p)
-				if (k % 2 == 0) k /= 2; else k = (k + p) / 2;
-				if (k == p - 1)
+				if (k % 2 == 0) k /= 2; else k = (k + prime) / 2;
+				if (k == prime - 1)
 				{
 					// n + 1 is the order of 2 modulo p
 					pos.o = n + 1;
@@ -71,14 +65,14 @@ public:
 		}
 	}
 
-	double val(const uint32_t k) const
+	double val(const uint64_t k) const
 	{
 		std::vector<bool> sieve(s_max, true);
 		for (const auto & po : pos_vect)
 		{
-			const uint32_t p = po.p, o = po.o;
-			const uint32_t n = po.s[k % p];
-			if (n == uint32_t(-1)) continue;
+			const uint64_t p = po.p, o = po.o;
+			const uint64_t n = po.s[k % p];
+			if (n == uint64_t(-1)) continue;
 			for (size_t i = n; i < s_max; i += o) sieve[i] = false;
 		}
 
@@ -100,13 +94,13 @@ int main(int argc, char * argv[])
 		return EXIT_FAILURE;
 	}
 
-	uint32_t k_min = (argc > 1) ? uint32_t(std::atoll(argv[1])) : 3;
-	uint32_t k_max = (argc > 2) ? uint32_t(std::atoll(argv[2])) : 1000000;
+	uint64_t k_min = (argc > 1) ? uint64_t(std::atoll(argv[1])) : 3;
+	uint64_t k_max = (argc > 2) ? uint64_t(std::atoll(argv[2])) : 1000000;
 	if (k_min < 3) k_min = 3;
 	if (k_min % 2 == 0) k_min += 1;
 	if (k_max % 2 == 0) k_max -= 1;
-	const uint32_t p_max = (argc > 3) ? uint32_t(std::atoll(argv[3])) : 20000;
-	const uint32_t n_max = (argc > 4) ? uint32_t(std::atoll(argv[4])) : 50000;
+	const uint64_t p_max = (argc > 3) ? uint64_t(std::atoll(argv[3])) : 20000;
+	const uint64_t n_max = (argc > 4) ? uint64_t(std::atoll(argv[4])) : 50000;
 
 	std::cout << "Initializing prime list..." << std::endl;
 	Weight weight(p_max, n_max);
@@ -116,7 +110,7 @@ int main(int argc, char * argv[])
 
 	std::cout << "Computing weights..." << std::endl;
 	std::cout << std::setprecision(4);
-	for (uint32_t k = k_min; k <= k_max; k += 2)
+	for (uint64_t k = k_min; k <= k_max; k += 2)
 	{
 		const double w = weight.val(k);
 		pFile << k << " " << w << std::endl;
