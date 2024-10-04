@@ -1,5 +1,5 @@
 CXX = g++
-FLAGS = -O2
+FLAGS = -O2 -std=c++20
 INC = -I./primesieve/include/
 LIBS = -lm
 
@@ -13,7 +13,7 @@ PRIMESIEVE_OBJS = ./primesieve/src/api.o ./primesieve/src/CountPrintPrimes.o ./p
 
 all: weight
 
-weight: weight.o $(PRIMESIEVE_OBJS)
+weight: weight.o WeightSieve.o $(PRIMESIEVE_OBJS)
 	$(CXX) -o $@ $^ $(LIBS)
 
 %.o: %.cpp
