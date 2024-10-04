@@ -13,7 +13,7 @@ PRIMESIEVE_OBJS = ./primesieve/src/api.o ./primesieve/src/CountPrintPrimes.o ./p
 
 all: weight
 
-weight: weight.o WeightSieve.o $(PRIMESIEVE_OBJS)
+weight: weight.o WeightSieve.o arg_parser.o $(PRIMESIEVE_OBJS)
 	$(CXX) -o $@ $^ $(LIBS)
 
 %.o: %.cpp

@@ -20,23 +20,37 @@ See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 
 #include "WeightSieve.h"
 
-WeightSieve::WeightSieve(const uint64_t primeMax, const uint64_t nMax) : sieveMax(nMax), C0(exp(std::numbers::egamma) * log(primeMax) / double(nMax)) {
-	primesieve::iterator it(3, primeMax);
+inline static uint64_t divmod(uint64_t a, uint64_t b, uint64_t p) {
+	if (b > p) {
+		b %= p;
+	}
+	uint64_t aModB = a % b;
+	while (aModB) {
+		a += p;
+		aModB = a % b;
+	}
+	return a / b;
+}
+
+WeightSieve::WeightSieve(const uint64_t primeMax, const uint64_t nMax, const uint32_t base, const int8_t c) : sieveMax(nMax), C0(exp(std::numbers::egamma) * log(primeMax) / double(nMax)), base(base), c(c) {
+	primesieve::iterator it(2, primeMax);
 	uint64_t prime = it.next_prime();
 
 	for (; prime < primeMax; prime = it.next_prime()) {
+		if (base % prime == 0) continue;
 		// std::cout << prime << std::endl;
 
 		PrimeFactor factor(prime);
 
-		uint64_t kModP = prime - 1;		// (p - 1) * 2^0 + 1 = 0 (mod p)
+		const uint64_t startingKModP = c > 0 ? prime - c : -c;
+		uint64_t kModP = startingKModP;		// (p - 1) * 2^0 + 1 = 0 (mod p)
 		for (uint64_t n = 0; n < prime; ++n) {
 			factor.sieve[kModP] = n;
 			// std::cout << "  " << kModP << ", " << n << std::endl;
 
 			// if k * 2^n + 1 = 0 (mod p) then k/2 * 2^{n + 1} + 1 = 0 (mod p)
-			if (kModP % 2 == 0) kModP /= 2; else kModP = (kModP + prime) / 2;
-			if (kModP == prime - 1) {
+			kModP = divmod(kModP, base, prime);
+			if (kModP == startingKModP) {
 				// n + 1 is the order of 2 modulo p
 				factor.order = n + 1;
 				// std::cout << "  order = " << n + 1 << std::endl;

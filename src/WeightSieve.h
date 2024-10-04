@@ -28,11 +28,13 @@ private:
 	};
 
 	const uint64_t sieveMax;
+	const uint32_t base;
+	const int8_t c = 1;
 	const double C0;
 	std::vector<PrimeFactor> factorVector;
 
 public:
-	WeightSieve(const uint64_t primeMax, const uint64_t nMax);
+	WeightSieve(const uint64_t primeMax, const uint64_t nMax, const uint32_t base, const int8_t c);
 
 	double value(const uint64_t k) const;
 };
