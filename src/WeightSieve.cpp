@@ -9,6 +9,8 @@ weight computes the 'weight' of the sequence k * 2^n + 1 for a range of k's.
 See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 */
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -71,8 +73,7 @@ double WeightSieve::value(const uint64_t k) const {
 		for (size_t n = initialN; n < sieveMax; n += order) sieve[n] = false;
 	}
 
-	size_t nsRemaining = 0;
-	for (const bool nNotFactored : sieve) nsRemaining += nNotFactored ? 1 : 0;
+	const std::ptrdiff_t nsRemaining = std::count(sieve.cbegin(), sieve.cend(), true);
 
 	return nsRemaining * C0;
 }
