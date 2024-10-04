@@ -18,6 +18,8 @@ See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 
 #include <primesieve.hpp>
 
+#define GAMMA 0.577215664
+
 class Weight
 {
 private:
@@ -26,6 +28,11 @@ private:
 		uint64_t prime;
 		uint64_t order;
 		uint64_t * sieve;
+
+		PrimeFactor(const uint64_t prime) : prime(prime), sieve(new uint64_t[prime])
+		{
+			for (size_t i = 0; i < prime; ++i) sieve[i] = uint64_t(-1);
+		};
 	};
 
 	const uint64_t sieveMax;
@@ -33,7 +40,7 @@ private:
 	std::vector<PrimeFactor> factorVector;
 
 public:
-	Weight(const uint64_t primeMax, const uint64_t nMax) : sieveMax(nMax), C0(exp(0.577215664) * log(primeMax) / double(nMax))
+	Weight(const uint64_t primeMax, const uint64_t nMax) : sieveMax(nMax), C0(exp(GAMMA) * log(primeMax) / double(nMax))
 	{
 
 		primesieve::iterator it(3, primeMax);
@@ -42,8 +49,7 @@ public:
 		{
 			// std::cout << prime << std::endl;
 
-			PrimeFactor factor; factor.prime = prime; factor.sieve = new uint64_t[prime];
-			for (size_t kModP = 0; kModP < prime; ++kModP) factor.sieve[kModP] = uint64_t(-1);
+			PrimeFactor factor(prime);
 
 			uint64_t kModP = prime - 1;		// (p - 1) * 2^0 + 1 = 0 (mod p)
 			for (uint64_t n = 0; n < prime; ++n)
