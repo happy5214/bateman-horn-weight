@@ -21,65 +21,65 @@ See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 class Weight
 {
 private:
-	struct Pos
+	struct PrimeFactor
 	{
-		uint64_t p;
-		uint64_t o;
-		uint64_t * s;
+		uint64_t prime;
+		uint64_t order;
+		uint64_t * sieve;
 	};
 
-	const uint64_t s_max;
+	const uint64_t sieveMax;
 	const double C0;
-	std::vector<Pos> pos_vect;
+	std::vector<PrimeFactor> factorVector;
 
 public:
-	Weight(const uint64_t p_max, const uint64_t n_max) : s_max(n_max), C0(exp(0.577215664) * log(p_max) / double(n_max))
+	Weight(const uint64_t primeMax, const uint64_t nMax) : sieveMax(nMax), C0(exp(0.577215664) * log(primeMax) / double(nMax))
 	{
 
-		primesieve::iterator it(3, p_max);
+		primesieve::iterator it(3, primeMax);
 		uint64_t prime = it.next_prime();
-		for (; prime < p_max; prime = it.next_prime())
+		for (; prime < primeMax; prime = it.next_prime())
 		{
 			// std::cout << prime << std::endl;
 
-			Pos pos; pos.p = prime; pos.s = new uint64_t[prime];
-			for (size_t k = 0; k < prime; ++k) pos.s[k] = uint64_t(-1);
+			PrimeFactor factor; factor.prime = prime; factor.sieve = new uint64_t[prime];
+			for (size_t kModP = 0; kModP < prime; ++kModP) factor.sieve[kModP] = uint64_t(-1);
 
-			uint64_t k = prime - 1;		// (p - 1) * 2^0 + 1 = 0 (mod p)
+			uint64_t kModP = prime - 1;		// (p - 1) * 2^0 + 1 = 0 (mod p)
 			for (uint64_t n = 0; n < prime; ++n)
 			{
-				pos.s[k] = n;
-				// std::cout << "  " << k << ", " << n << std::endl;
+				factor.sieve[kModP] = n;
+				// std::cout << "  " << kModP << ", " << n << std::endl;
 
 				// if k * 2^n + 1 = 0 (mod p) then k/2 * 2^{n + 1} + 1 = 0 (mod p)
-				if (k % 2 == 0) k /= 2; else k = (k + prime) / 2;
-				if (k == prime - 1)
+				if (kModP % 2 == 0) kModP /= 2; else kModP = (kModP + prime) / 2;
+				if (kModP == prime - 1)
 				{
 					// n + 1 is the order of 2 modulo p
-					pos.o = n + 1;
+					factor.order = n + 1;
 					// std::cout << "  order = " << n + 1 << std::endl;
 					break;
 				}
 			}
-			pos_vect.push_back(pos);
+			factorVector.push_back(factor);
 		}
 	}
 
 	double val(const uint64_t k) const
 	{
-		std::vector<bool> sieve(s_max, true);
-		for (const auto & po : pos_vect)
+		std::vector<bool> sieve(sieveMax, true);
+		for (const auto & factor : factorVector)
 		{
-			const uint64_t p = po.p, o = po.o;
-			const uint64_t n = po.s[k % p];
-			if (n == uint64_t(-1)) continue;
-			for (size_t i = n; i < s_max; i += o) sieve[i] = false;
+			const uint64_t prime = factor.prime, order = factor.order;
+			const uint64_t initialN = factor.sieve[k % prime];
+			if (initialN == uint64_t(-1)) continue;
+			for (size_t n = initialN; n < sieveMax; n += order) sieve[n] = false;
 		}
 
-		size_t n = 0;
-		for (const bool b : sieve) n += b ? 1 : 0;
+		size_t nsRemaining = 0;
+		for (const bool nNotFactored : sieve) nsRemaining += nNotFactored ? 1 : 0;
 
-		return n * C0;
+		return nsRemaining * C0;
 	}
 };
 
@@ -87,39 +87,39 @@ int main(int argc, char * argv[])
 {
 	if (argc < 3)
 	{
-		std::cout << "Usage: weight k_min k_max [p_max] [s_max]" << std::endl;
+		std::cout << "Usage: weight k_min k_max [prime_max] [s_max]" << std::endl;
 		std::cout << "         Compute the weights for odd k_min <= k <= k_max." << std::endl;
-		std::cout << "         Estimates are computed with p <= p_max (default 20000)" << std::endl;
+		std::cout << "         Estimates are computed with p <= prime_max (default 20000)" << std::endl;
 		std::cout << "         and with n <= n_max is the max value (default 50000)." << std::endl;
-		return EXIT_FAILURE;
+		return 1;
 	}
 
-	uint64_t k_min = (argc > 1) ? uint64_t(std::atoll(argv[1])) : 3;
-	uint64_t k_max = (argc > 2) ? uint64_t(std::atoll(argv[2])) : 1000000;
-	if (k_min < 3) k_min = 3;
-	if (k_min % 2 == 0) k_min += 1;
-	if (k_max % 2 == 0) k_max -= 1;
-	const uint64_t p_max = (argc > 3) ? uint64_t(std::atoll(argv[3])) : 20000;
-	const uint64_t n_max = (argc > 4) ? uint64_t(std::atoll(argv[4])) : 50000;
+	uint64_t kMin = (argc > 1) ? uint64_t(std::atoll(argv[1])) : 3;
+	uint64_t kMax = (argc > 2) ? uint64_t(std::atoll(argv[2])) : 1000000;
+	if (kMin < 3) kMin = 3;
+	if (kMin % 2 == 0) kMin += 1;
+	if (kMax % 2 == 0) kMax -= 1;
+	const uint64_t primeMax = (argc > 3) ? uint64_t(std::atoll(argv[3])) : 20000;
+	const uint64_t nMax = (argc > 4) ? uint64_t(std::atoll(argv[4])) : 50000;
 
 	std::cout << "Initializing prime list..." << std::endl;
-	Weight weight(p_max, n_max);
+	Weight weight(primeMax, nMax);
 
 	std::ofstream pFile("weight.txt");
-	if (!pFile.is_open()) return EXIT_FAILURE;
+	if (!pFile.is_open()) return 2;
 
 	std::cout << "Computing weights..." << std::endl;
 	std::cout << std::setprecision(4);
-	for (uint64_t k = k_min; k <= k_max; k += 2)
+	for (uint64_t k = kMin; k <= kMax; k += 2)
 	{
 		const double w = weight.val(k);
 		pFile << k << " " << w << std::endl;
-		if (k % 65536 == 1) std::cout << k * 100.0 / k_max << "%     \r";
+		if (k % 65536 == 1) std::cout << k * 100.0 / kMax << "%     \r";
 	}
 	std::cout << std::endl;
 
 	pFile.close();
 	std::cout << "Wrote file 'weight.txt'." << std::endl;
 
-	return EXIT_SUCCESS;
+	return 0;
 }
