@@ -20,7 +20,7 @@ See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 static std::string invocation_name = "weight";
 
 static void print_help() {
-	std::cout << "Usage: " << invocation_name << " k_min k_max [prime_max] [s_max]" << std::endl;
+	std::cout << "Usage: " << invocation_name << " k_min k_max [-p prime_max] [-n s_max] [-b base] [--riesel]" << std::endl;
 	std::cout << "         Compute the weights for odd k_min <= k <= k_max." << std::endl;
 	std::cout << "         Estimates are computed with p <= prime_max (default 20000)" << std::endl;
 	std::cout << "         and with n <= n_max is the max value (default 50000)." << std::endl;
