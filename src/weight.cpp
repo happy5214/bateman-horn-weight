@@ -9,6 +9,7 @@ weight computes the 'weight' of the sequence k * 2^n + 1 for a range of k's.
 See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 */
 
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <iomanip>
@@ -72,32 +73,42 @@ int main(int argc, char * argv[]) {
 	}
 
 	uint64_t kMin, kMax;
+	bool oneKPassed = false;
 	const std::string kMinStr = parser.argument( argind++ );
 	if (!kMinStr.empty()) {
-		kMin = uint64_t(std::stoll(kMinStr));
+		kMin = std::max(uint64_t(std::stoll(kMinStr)), uint64_t(2));
 	} else {
 		kMin = 2;
 	}
 	const std::string kMaxStr = parser.argument( argind++ );
 	if (!kMaxStr.empty()) {
-		kMax = uint64_t(std::stoll(kMaxStr));
+		kMax = std::max(uint64_t(std::stoll(kMaxStr)), uint64_t(3));
 	} else if (!kMinStr.empty()) {
-		kMax = kMin;
+		oneKPassed = true;
 	} else {
 		kMax = 1000000;
 	}
 
-	if (kMax < kMin) std::swap(kMin, kMax);
-	if (kMin < 2) kMin = 2;
-	if (kMax < 2) kMax = 1000000;
-	if (kMin == kMax) {
+	if (oneKPassed) {
 		while (kMin % base == 0) {
 			kMin /= base;
 		}
+		if (kMin == 1) {
+			if (base == 2) {
+				std::cerr << "Could not calculate weight for " << (c > 0 ? "Fermat" : "Mersenne") << " numbers, as they have special rules.";
+				return 1;
+			} else if (c > 0) {
+				std::cerr << "Could not calculate weight for base-" << base << " generalized Fermat numbers, as they have special rules.";
+				return 1;
+			} else {
+				std::cerr << "Could not calculate weight for base-" << base << " Cunningham numbers, as they have special rules.";
+				return 1;
+			}
+		}
 		kMax = kMin;
+	} else if (kMax < kMin) {
+		std::swap(kMin, kMax);
 	}
-	if (kMin < 2) kMin = 2;
-	if (kMax < 2) kMax = 1000000;
 	if (kMin % base == 0) kMin += 1;
 	if (kMax % base == 0) kMax -= 1;
 
