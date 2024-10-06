@@ -13,6 +13,7 @@ See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <utility>
 
 #include "arg_parser.h"
 #include "WeightSieve.h"
@@ -70,18 +71,33 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	std::string kMinStr = parser.argument( argind++ );
-	if (kMinStr.empty()) {
-		kMinStr = "2";
+	uint64_t kMin, kMax;
+	const std::string kMinStr = parser.argument( argind++ );
+	if (!kMinStr.empty()) {
+		kMin = uint64_t(std::stoll(kMinStr));
+	} else {
+		kMin = 2;
 	}
-	std::string kMaxStr = parser.argument( argind++ );
-	if (kMaxStr.empty()) {
-		kMaxStr = "1000000";
+	const std::string kMaxStr = parser.argument( argind++ );
+	if (!kMaxStr.empty()) {
+		kMax = uint64_t(std::stoll(kMaxStr));
+	} else if (!kMinStr.empty()) {
+		kMax = kMin;
+	} else {
+		kMax = 1000000;
 	}
 
-	uint64_t kMin = uint64_t(std::stoll(kMinStr));
-	uint64_t kMax = uint64_t(std::stoll(kMaxStr));
+	if (kMax < kMin) std::swap(kMin, kMax);
 	if (kMin < 2) kMin = 2;
+	if (kMax < 2) kMax = 1000000;
+	if (kMin == kMax) {
+		while (kMin % base == 0) {
+			kMin /= base;
+		}
+		kMax = kMin;
+	}
+	if (kMin < 2) kMin = 2;
+	if (kMax < 2) kMax = 1000000;
 	if (kMin % base == 0) kMin += 1;
 	if (kMax % base == 0) kMax -= 1;
 
