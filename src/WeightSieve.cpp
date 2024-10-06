@@ -21,74 +21,7 @@ See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 #include <primesieve.hpp>
 
 #include "WeightSieve.h"
-
-inline static uint64_t modinv(uint64_t a, uint64_t p) {
-
-	/* thanks to the folks at www.mersenneforum.org */
-	/* borrowed from yafu, under public domain. */
-
-	uint64_t ps1, ps2, parity, dividend, divisor, rem, q, t;
-
-
-	q = 1;
-	rem = a;
-	dividend = p;
-	divisor = a;
-	ps1 = 1;
-	ps2 = 0;
-	parity = 0;
-
-	while (divisor > 1) {
-		rem = dividend - divisor;
-		t = rem - divisor;
-		if (rem >= divisor) {
-			q += ps1; rem = t; t -= divisor;
-			if (rem >= divisor) {
-				q += ps1; rem = t; t -= divisor;
-				if (rem >= divisor) {
-					q += ps1; rem = t; t -= divisor;
-					if (rem >= divisor) {
-						q += ps1; rem = t; t -= divisor;
-						if (rem >= divisor) {
-							q += ps1; rem = t; t -= divisor;
-							if (rem >= divisor) {
-								q += ps1; rem = t; t -= divisor;
-								if (rem >= divisor) {
-									q += ps1; rem = t; t -= divisor;
-									if (rem >= divisor) {
-										q += ps1; rem = t;
-										if (rem >= divisor) {
-											q = dividend / divisor;
-											rem = dividend % divisor;
-											q *= ps1;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		q += ps2;
-		parity = ~parity;
-		dividend = divisor;
-		divisor = rem;
-		ps2 = ps1;
-		ps1 = q;
-	}
-
-	if (parity == 0)
-		return ps1;
-	else
-		return p - ps1;
-}
-
-inline static uint64_t divmod(uint64_t a, uint64_t b, uint64_t p) {
-	const uint64_t bInv = modinv(b, p);
-	return (a * bInv) % p;
-}
+#include "modalg.h"
 
 WeightSieve::WeightSieve(const uint64_t primeMax, const uint64_t nMax, const uint32_t base, const int8_t c) : sieveMax(nMax), C0(exp(std::numbers::egamma) * log(primeMax) / double(nMax)), base(base), c(c) {
 	primesieve::iterator it(2, primeMax);
