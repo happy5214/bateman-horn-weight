@@ -94,23 +94,27 @@ int main(int argc, char * argv[]) {
 			kMin /= base;
 		}
 		if (kMin == 1) {
+			std::string numberType;
 			if (base == 2) {
-				std::cerr << "Could not calculate weight for " << (c > 0 ? "Fermat" : "Mersenne") << " numbers, as they have special rules.";
-				return 1;
-			} else if (c > 0) {
-				std::cerr << "Could not calculate weight for base-" << base << " generalized Fermat numbers, as they have special rules.";
-				return 1;
+				numberType = (c > 0 ? "Fermat" : "Mersenne");
 			} else {
-				std::cerr << "Could not calculate weight for base-" << base << " Cunningham numbers, as they have special rules.";
-				return 1;
+				numberType = "base-";
+				numberType += std::to_string(base);
+				if (c > 0) {
+					numberType += " generalized Fermat";
+				} else {
+					numberType += " Cunningham";
+				}
 			}
+			std::cerr << "Could not calculate weight for " << numberType << " numbers, as they have special rules.";
+			return 1;
 		}
 		kMax = kMin;
 	} else if (kMax < kMin) {
 		std::swap(kMin, kMax);
 	}
-	if (kMin % base == 0) kMin += 1;
-	if (kMax % base == 0) kMax -= 1;
+	if (kMin % base == 0) kMin++;
+	if (kMax % base == 0) kMax--;
 
 	std::cout << "Initializing prime list..." << std::endl;
 	WeightSieve weight(primeMax, nMax, base, c);
