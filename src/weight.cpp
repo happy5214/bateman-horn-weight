@@ -11,9 +11,10 @@ See http://yves.gallot.pagesperso-orange.fr/papers/weight.pdf.
 
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
 #include <utility>
 
 #include "arg_parser.h"
@@ -62,9 +63,9 @@ int main(int argc, char * argv[]) {
 			break;
 		}
 		switch (code) {
-			case 'p': primeMax = uint64_t(std::stoll(parser.argument(argind))); break;
-			case 'n': nMax = uint64_t(std::stoll(parser.argument(argind))); break;
-			case 'b': base = uint32_t(std::stoi(parser.argument(argind))); break;
+			case 'p': primeMax = uint64_t(std::stoull(parser.argument(argind))); break;
+			case 'n': nMax = uint64_t(std::stoull(parser.argument(argind))); break;
+			case 'b': base = uint32_t(std::stoul(parser.argument(argind))); break;
 			case 'r': c = -1; break;
 			case 'h': print_help(); return 0;
 			default :
@@ -76,13 +77,13 @@ int main(int argc, char * argv[]) {
 	bool oneKPassed = false;
 	const std::string kMinStr = parser.argument( argind++ );
 	if (!kMinStr.empty()) {
-		kMin = std::max(uint64_t(std::stoll(kMinStr)), uint64_t(2));
+		kMin = std::max(uint64_t(std::stoull(kMinStr)), uint64_t(2));
 	} else {
 		kMin = 2;
 	}
 	const std::string kMaxStr = parser.argument( argind++ );
 	if (!kMaxStr.empty()) {
-		kMax = std::max(uint64_t(std::stoll(kMaxStr)), uint64_t(3));
+		kMax = std::max(uint64_t(std::stoull(kMaxStr)), uint64_t(3));
 	} else if (!kMinStr.empty()) {
 		oneKPassed = true;
 	} else {
